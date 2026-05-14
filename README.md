@@ -641,3 +641,43 @@ class SubscriptionCard extends StatelessWidget {
 
 **作者**：Manus AI
 **日期**：2026年5月14日
+
+
+
+---
+
+## 8. Web 部署指引
+
+PureFinance 在 Web 端使用 `sqflite_common_ffi_web`，**它依赖两个特殊的运行时文件**（`sqflite_sw.js` 和 `sqlite3.wasm`），如果不安装就直接 `flutter build web`，部署后会**白屏**。
+
+### 一键脚本（推荐）
+
+```bash
+# 部署到站点根路径
+./scripts/build_web.sh
+
+# 部署到子路径，例如 https://example.com/finance/
+./scripts/build_web.sh /finance/
+```
+
+完成后将 `build/web/` 目录的**所有内容**上传到服务器（或将该路径作为 nginx/Apache 的 document root）。
+
+### 手动步骤
+
+```bash
+flutter pub get
+dart run sqflite_common_ffi_web:setup        # 必须，生成 sqflite_sw.js 和 sqlite3.wasm
+flutter build web --release                  # 默认 base href = /
+# 或部署到子路径：
+flutter build web --release --base-href=/finance/
+```
+
+### 部署常见坑
+
+1. **白屏 / 加载动画转圈不停**：99% 是漏跑了 `dart run sqflite_common_ffi_web:setup`。检查 `build/web/` 下是否有 `sqflite_sw.js` 与 `sqlite3.wasm`。
+2. **直接把 `web/` 上传到服务器** —— 不行。`web/` 只是源码目录，里面的 `index.html` 还带着 `$FLUTTER_BASE_HREF` 占位符。必须用 `flutter build web` 生成 `build/web/` 后再部署。
+3. **部署在子路径但没传 `--base-href`**：浏览器会找不到 `main.dart.js` 等资源，控制台会出现 404。
+4. **服务器需要正确的 MIME**：`.wasm` → `application/wasm`，`.js` → `application/javascript`。nginx 默认通常正确，老旧 Apache 可能需要在 `.htaccess` 中显式声明。
+5. **HTTPS / Service Worker**：`sqflite_sw.js` 是 Service Worker，必须运行在 `https://` 或 `http://localhost`，纯 IP + http 部署时浏览器会拒绝注册。
+
+部署后如果初始化仍然失败，应用会自动显示一个错误诊断页面（而不是白屏），上面会写明可能原因和需要执行的命令，便于排查。

@@ -75,7 +75,8 @@ class SubscriptionProvider extends ChangeNotifier {
           total += sub.amount / 12.0;
           break;
         case Frequency.custom:
-          total += sub.amount;
+          // Unknown period: don't pretend it's monthly. Skip from monthly
+          // total so we don't over-report active subscription cost.
           break;
       }
     }
@@ -83,11 +84,18 @@ class SubscriptionProvider extends ChangeNotifier {
   }
 
   List<RecurringTransaction> checkDueSubscriptions(DateTime today) {
+    // Compare on calendar-day boundaries so a subscription due "today" is
+    // included regardless of the time component on either date.
+    final todayDay = DateTime(today.year, today.month, today.day);
     return _subscriptions.where((s) {
       if (s.status != SubscriptionStatus.active) return false;
-      final dueDate = s.nextDueDate;
-      final reminderDate = dueDate.subtract(Duration(days: s.remindBeforeDays));
-      return !today.isBefore(reminderDate) && !today.isAfter(dueDate);
+      final dueDay = DateTime(
+        s.nextDueDate.year,
+        s.nextDueDate.month,
+        s.nextDueDate.day,
+      );
+      final reminderDay = dueDay.subtract(Duration(days: s.remindBeforeDays));
+      return !todayDay.isBefore(reminderDay) && !todayDay.isAfter(dueDay);
     }).toList();
   }
 }
