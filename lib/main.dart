@@ -12,7 +12,7 @@ import 'theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
-    databaseFactory = databaseFactoryFfiWeb;
+    databaseFactory = databaseFactoryFfiWebNoWebWorker;
   }
   await DatabaseService().database;
   runApp(const PureFinanceApp());
