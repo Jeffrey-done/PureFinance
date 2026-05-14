@@ -57,6 +57,33 @@ class AccountProvider extends ChangeNotifier {
     }
   }
 
+  /// Atomically transfers balance between two accounts using a single database
+  /// transaction to prevent inconsistent state.
+  Future<void> transferBalance(
+    String fromAccountId,
+    double amount,
+    String toAccountId,
+  ) async {
+    await _dbService.batchUpdateBalances(
+      fromAccountId,
+      -amount,
+      toAccountId,
+      amount,
+    );
+    // Sync in-memory state
+    final fromIndex = _accounts.indexWhere((a) => a.id == fromAccountId);
+    if (fromIndex != -1) {
+      final account = _accounts[fromIndex];
+      _accounts[fromIndex] = account.copyWith(balance: account.balance - amount);
+    }
+    final toIndex = _accounts.indexWhere((a) => a.id == toAccountId);
+    if (toIndex != -1) {
+      final account = _accounts[toIndex];
+      _accounts[toIndex] = account.copyWith(balance: account.balance + amount);
+    }
+    notifyListeners();
+  }
+
   double get getTotalAssets {
     return _accounts
         .where((a) =>

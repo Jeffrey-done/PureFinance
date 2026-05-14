@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -23,7 +24,16 @@ class DatabaseService {
       path,
       version: 1,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    debugPrint(
+      'DatabaseService: upgrading from version $oldVersion to $newVersion',
+    );
+    // Future migrations go here, e.g.:
+    // if (oldVersion < 2) { await db.execute('ALTER TABLE ...'); }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -134,5 +144,50 @@ class DatabaseService {
   }) async {
     final db = await database;
     return await db.delete(table, where: where, whereArgs: whereArgs);
+  }
+
+  /// Atomically updates the balance of two accounts within a single database
+  /// transaction. Used for transfers to prevent inconsistent state if the app
+  /// crashes between individual writes.
+  Future<void> batchUpdateBalances(
+    String fromAccountId,
+    double fromDelta,
+    String toAccountId,
+    double toDelta,
+  ) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      // Update source account
+      final fromRows = await txn.query(
+        'accounts',
+        where: 'id = ?',
+        whereArgs: [fromAccountId],
+      );
+      if (fromRows.isNotEmpty) {
+        final currentBalance = (fromRows.first['balance'] as num).toDouble();
+        await txn.update(
+          'accounts',
+          {'balance': currentBalance + fromDelta},
+          where: 'id = ?',
+          whereArgs: [fromAccountId],
+        );
+      }
+
+      // Update destination account
+      final toRows = await txn.query(
+        'accounts',
+        where: 'id = ?',
+        whereArgs: [toAccountId],
+      );
+      if (toRows.isNotEmpty) {
+        final currentBalance = (toRows.first['balance'] as num).toDouble();
+        await txn.update(
+          'accounts',
+          {'balance': currentBalance + toDelta},
+          where: 'id = ?',
+          whereArgs: [toAccountId],
+        );
+      }
+    });
   }
 }

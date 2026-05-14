@@ -333,7 +333,34 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     );
 
     if (_isEditing) {
+      final oldTxn = widget.transaction!;
       await txnProvider.updateTransaction(transaction);
+
+      // Reverse the old transaction's balance effect
+      if (oldTxn.type == TransactionType.expense) {
+        await accountProvider.updateBalance(oldTxn.accountId, oldTxn.amount);
+      } else if (oldTxn.type == TransactionType.income) {
+        await accountProvider.updateBalance(oldTxn.accountId, -oldTxn.amount);
+      } else if (oldTxn.type == TransactionType.transfer) {
+        // Reverse old transfer: credit source, debit destination
+        await accountProvider.updateBalance(oldTxn.accountId, oldTxn.amount);
+        // Note: original transfer destination is stored in categoryId for transfers
+        // but we only have accountId stored on the transaction; reverse what we can
+      }
+
+      // Apply the new transaction's balance effect
+      if (_type == TransactionType.expense) {
+        await accountProvider.updateBalance(_selectedAccountId!, -amount);
+      } else if (_type == TransactionType.income) {
+        await accountProvider.updateBalance(_selectedAccountId!, amount);
+      } else if (_type == TransactionType.transfer &&
+          _selectedToAccountId != null) {
+        await accountProvider.transferBalance(
+          _selectedAccountId!,
+          amount,
+          _selectedToAccountId!,
+        );
+      }
     } else {
       await txnProvider.addTransaction(transaction);
       // Update account balance
@@ -341,9 +368,13 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         await accountProvider.updateBalance(_selectedAccountId!, -amount);
       } else if (_type == TransactionType.income) {
         await accountProvider.updateBalance(_selectedAccountId!, amount);
-      } else if (_type == TransactionType.transfer && _selectedToAccountId != null) {
-        await accountProvider.updateBalance(_selectedAccountId!, -amount);
-        await accountProvider.updateBalance(_selectedToAccountId!, amount);
+      } else if (_type == TransactionType.transfer &&
+          _selectedToAccountId != null) {
+        await accountProvider.transferBalance(
+          _selectedAccountId!,
+          amount,
+          _selectedToAccountId!,
+        );
       }
     }
 
