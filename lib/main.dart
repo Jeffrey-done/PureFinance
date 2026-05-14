@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'providers/providers.dart';
+import 'services/database_service.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await DatabaseService().database;
   runApp(const PureFinanceApp());
 }
 
@@ -14,7 +18,12 @@ class PureFinanceApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => _PlaceholderProvider()),
+        ChangeNotifierProvider(create: (_) => TransactionProvider()..loadTransactions()),
+        ChangeNotifierProvider(create: (_) => AccountProvider()..loadAccounts()),
+        ChangeNotifierProvider(create: (_) => CategoryProvider()..loadCategories()),
+        ChangeNotifierProvider(create: (_) => TagProvider()..loadTags()),
+        ChangeNotifierProvider(create: (_) => SubscriptionProvider()..loadSubscriptions()),
+        ChangeNotifierProvider(create: (_) => BudgetProvider()..loadBudgets()),
       ],
       child: MaterialApp(
         title: 'PureFinance',
@@ -46,5 +55,3 @@ class HomePage extends StatelessWidget {
     );
   }
 }
-
-class _PlaceholderProvider extends ChangeNotifier {}
