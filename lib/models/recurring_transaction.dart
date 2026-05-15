@@ -35,6 +35,16 @@ class RecurringTransaction {
   });
 
   factory RecurringTransaction.fromJson(Map<String, dynamic> json) {
+    final freqStr = json['frequency'] as String;
+    final frequency = Frequency.values.firstWhere(
+      (e) => e.name == freqStr || e.toString() == freqStr,
+    );
+
+    final statusStr = json['status'] as String;
+    final status = SubscriptionStatus.values.firstWhere(
+      (e) => e.name == statusStr || e.toString() == statusStr,
+    );
+
     return RecurringTransaction(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -42,15 +52,11 @@ class RecurringTransaction {
       currency: json['currency'] as String,
       startDate: DateTime.parse(json['startDate'] as String),
       nextDueDate: DateTime.parse(json['nextDueDate'] as String),
-      frequency: Frequency.values.firstWhere(
-        (e) => e.toString() == json['frequency'],
-      ),
+      frequency: frequency,
       categoryId: json['categoryId'] as String,
       accountId: json['accountId'] as String,
       notes: json['notes'] as String?,
-      status: SubscriptionStatus.values.firstWhere(
-        (e) => e.toString() == json['status'],
-      ),
+      status: status,
       remindBeforeDays: json['remindBeforeDays'] as int,
     );
   }
@@ -63,11 +69,11 @@ class RecurringTransaction {
       'currency': currency,
       'startDate': startDate.toIso8601String(),
       'nextDueDate': nextDueDate.toIso8601String(),
-      'frequency': frequency.toString(),
+      'frequency': frequency.name,
       'categoryId': categoryId,
       'accountId': accountId,
       'notes': notes,
-      'status': status.toString(),
+      'status': status.name,
       'remindBeforeDays': remindBeforeDays,
     };
   }

@@ -46,6 +46,7 @@ class PureFinanceApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()..loadThemeMode()),
         ChangeNotifierProvider(create: (_) => TransactionProvider()..loadTransactions()),
         ChangeNotifierProvider(create: (_) => AccountProvider()..loadAccounts()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()..loadCategories()),
@@ -53,12 +54,16 @@ class PureFinanceApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SubscriptionProvider()..loadSubscriptions()),
         ChangeNotifierProvider(create: (_) => BudgetProvider()..loadBudgets()),
       ],
-      child: MaterialApp(
-        title: 'PureFinance',
-        theme: AppTheme.lightTheme,
-        darkTheme: AppTheme.darkTheme,
-        themeMode: ThemeMode.system,
-        home: const MainNavigation(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            title: 'PureFinance',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
+            home: const MainNavigation(),
+          );
+        },
       ),
     );
   }

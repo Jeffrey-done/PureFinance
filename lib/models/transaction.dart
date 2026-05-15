@@ -11,6 +11,7 @@ class Transaction {
   final DateTime date;
   final String categoryId;
   final String accountId;
+  final String? toAccountId;
   final String? notes;
   final List<String>? tags;
   final bool isRecurring;
@@ -24,6 +25,7 @@ class Transaction {
     required this.date,
     required this.categoryId,
     required this.accountId,
+    this.toAccountId,
     this.notes,
     this.tags,
     this.isRecurring = false,
@@ -31,16 +33,21 @@ class Transaction {
   });
 
   factory Transaction.fromJson(Map<String, dynamic> json) {
+    // Support both new (.name) and legacy (.toString()) enum format
+    final typeStr = json['type'] as String;
+    final type = TransactionType.values.firstWhere(
+      (e) => e.name == typeStr || e.toString() == typeStr,
+    );
+
     return Transaction(
       id: json['id'] as String,
-      type: TransactionType.values.firstWhere(
-        (e) => e.toString() == json['type'],
-      ),
+      type: type,
       amount: (json['amount'] as num).toDouble(),
       currency: json['currency'] as String,
       date: DateTime.parse(json['date'] as String),
       categoryId: json['categoryId'] as String,
       accountId: json['accountId'] as String,
+      toAccountId: json['toAccountId'] as String?,
       notes: json['notes'] as String?,
       tags: (json['tags'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
       isRecurring: json['isRecurring'] as bool,
@@ -51,12 +58,13 @@ class Transaction {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'type': type.toString(),
+      'type': type.name,
       'amount': amount,
       'currency': currency,
       'date': date.toIso8601String(),
       'categoryId': categoryId,
       'accountId': accountId,
+      'toAccountId': toAccountId,
       'notes': notes,
       'tags': tags,
       'isRecurring': isRecurring,
@@ -72,6 +80,7 @@ class Transaction {
     DateTime? date,
     String? categoryId,
     String? accountId,
+    String? toAccountId,
     String? notes,
     List<String>? tags,
     bool? isRecurring,
@@ -85,6 +94,7 @@ class Transaction {
       date: date ?? this.date,
       categoryId: categoryId ?? this.categoryId,
       accountId: accountId ?? this.accountId,
+      toAccountId: toAccountId ?? this.toAccountId,
       notes: notes ?? this.notes,
       tags: tags ?? this.tags,
       isRecurring: isRecurring ?? this.isRecurring,

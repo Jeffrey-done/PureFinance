@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../providers/theme_provider.dart';
 import '../account/account_list_screen.dart';
 import '../category/category_management_screen.dart';
 import '../budget/budget_screen.dart';
@@ -19,12 +21,13 @@ class SettingsScreen extends StatelessWidget {
             _SettingsTile(
               icon: Icons.dark_mode,
               title: '深色模式',
-              trailing: Switch(
-                value: Theme.of(context).brightness == Brightness.dark,
-                onChanged: (value) {
-                  // Theme switching handled by ThemeProvider
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('主题切换跟随系统设置')),
+              trailing: Consumer<ThemeProvider>(
+                builder: (context, themeProvider, _) {
+                  return Switch(
+                    value: themeProvider.themeMode == ThemeMode.dark,
+                    onChanged: (value) {
+                      themeProvider.toggleDarkMode(value);
+                    },
                   );
                 },
               ),

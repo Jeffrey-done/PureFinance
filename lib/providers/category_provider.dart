@@ -7,42 +7,80 @@ import '../services/database_service.dart';
 class CategoryProvider extends ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
   List<Category> _categories = [];
+  bool _isLoading = false;
+  String? _error;
 
   List<Category> get categories => _categories;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
   Future<void> loadCategories() async {
-    final data = await _dbService.query('categories');
-    _categories = data.map((map) => Category.fromJson(Map<String, dynamic>.from(map))).toList();
-    if (_categories.isEmpty) {
-      await _seedDefaultCategories();
-    }
+    _isLoading = true;
+    _error = null;
     notifyListeners();
-  }
-
-  Future<void> addCategory(Category category) async {
-    await _dbService.insert('categories', category.toJson());
-    _categories.add(category);
-    notifyListeners();
-  }
-
-  Future<void> updateCategory(Category category) async {
-    await _dbService.update(
-      'categories',
-      category.toJson(),
-      where: 'id = ?',
-      whereArgs: [category.id],
-    );
-    final index = _categories.indexWhere((c) => c.id == category.id);
-    if (index != -1) {
-      _categories[index] = category;
+    try {
+      final data = await _dbService.query('categories');
+      _categories = data.map((map) => Category.fromJson(Map<String, dynamic>.from(map))).toList();
+      if (_categories.isEmpty) {
+        await _seedDefaultCategories();
+      }
+    } catch (e) {
+      debugPrint('CategoryProvider.loadCategories failed: $e');
+      _error = '加载分类失败: $e';
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> deleteCategory(String id) async {
-    await _dbService.delete('categories', where: 'id = ?', whereArgs: [id]);
-    _categories.removeWhere((c) => c.id == id);
-    notifyListeners();
+  Future<bool> addCategory(Category category) async {
+    try {
+      await _dbService.insert('categories', category.toJson());
+      _categories.add(category);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('CategoryProvider.addCategory failed: $e');
+      _error = '添加分类失败: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateCategory(Category category) async {
+    try {
+      await _dbService.update(
+        'categories',
+        category.toJson(),
+        where: 'id = ?',
+        whereArgs: [category.id],
+      );
+      final index = _categories.indexWhere((c) => c.id == category.id);
+      if (index != -1) {
+        _categories[index] = category;
+        notifyListeners();
+      }
+      return true;
+    } catch (e) {
+      debugPrint('CategoryProvider.updateCategory failed: $e');
+      _error = '更新分类失败: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteCategory(String id) async {
+    try {
+      await _dbService.delete('categories', where: 'id = ?', whereArgs: [id]);
+      _categories.removeWhere((c) => c.id == id);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('CategoryProvider.deleteCategory failed: $e');
+      _error = '删除分类失败: $e';
+      notifyListeners();
+      return false;
+    }
   }
 
   List<Category> getExpenseCategories() {

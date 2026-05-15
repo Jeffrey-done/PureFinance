@@ -217,14 +217,26 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
   DateTime _computeNextDueDate() {
     switch (_frequency) {
       case Frequency.monthly:
-        return DateTime(_startDate.year, _startDate.month + 1, _startDate.day);
+        return _safeAddMonths(_startDate, 1);
       case Frequency.quarterly:
-        return DateTime(_startDate.year, _startDate.month + 3, _startDate.day);
+        return _safeAddMonths(_startDate, 3);
       case Frequency.yearly:
-        return DateTime(_startDate.year + 1, _startDate.month, _startDate.day);
+        return _safeAddMonths(_startDate, 12);
       case Frequency.custom:
-        return DateTime(_startDate.year, _startDate.month + 1, _startDate.day);
+        return _safeAddMonths(_startDate, 1);
     }
+  }
+
+  /// Adds [months] to [date] safely, clamping the day to the last valid day
+  /// of the target month to prevent overflow (e.g. Jan 31 + 1 month = Feb 28).
+  DateTime _safeAddMonths(DateTime date, int months) {
+    final targetMonth = date.month + months;
+    final targetYear = date.year + (targetMonth - 1) ~/ 12;
+    final normalizedMonth = ((targetMonth - 1) % 12) + 1;
+    // Find the last day of the target month
+    final lastDayOfMonth = DateTime(targetYear, normalizedMonth + 1, 0).day;
+    final clampedDay = date.day > lastDayOfMonth ? lastDayOfMonth : date.day;
+    return DateTime(targetYear, normalizedMonth, clampedDay);
   }
 
   Future<void> _saveSubscription() async {

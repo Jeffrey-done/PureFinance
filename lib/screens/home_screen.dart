@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../models/category.dart';
 import '../models/transaction.dart';
 import '../providers/transaction_provider.dart';
 import '../providers/category_provider.dart';
@@ -24,6 +25,28 @@ class HomeScreen extends StatelessWidget {
         },
         child: Consumer<TransactionProvider>(
           builder: (context, txnProvider, _) {
+            if (txnProvider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (txnProvider.error != null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                    const SizedBox(height: 16),
+                    Text(txnProvider.error!),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: () => txnProvider.loadTransactions(),
+                      child: const Text('重试'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
             final now = DateTime.now();
             final monthlyExpense = txnProvider.getTotalExpense(now);
             final monthlyIncome = txnProvider.getTotalIncome(now);
@@ -204,7 +227,7 @@ class _SummaryCard extends StatelessWidget {
 
 class _TransactionItem extends StatelessWidget {
   final Transaction transaction;
-  final dynamic category;
+  final Category? category;
 
   const _TransactionItem({required this.transaction, this.category});
 

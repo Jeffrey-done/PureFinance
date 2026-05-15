@@ -18,6 +18,28 @@ class SubscriptionListScreen extends StatelessWidget {
       ),
       body: Consumer<SubscriptionProvider>(
         builder: (context, provider, _) {
+          if (provider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (provider.error != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(provider.error!),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () => provider.loadSubscriptions(),
+                    child: const Text('重试'),
+                  ),
+                ],
+              ),
+            );
+          }
+
           final subscriptions = provider.subscriptions;
 
           if (subscriptions.isEmpty) {

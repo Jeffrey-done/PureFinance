@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/subscription_provider.dart';
 import 'home_screen.dart';
 import 'transaction/transaction_list_screen.dart';
 import 'subscription/subscription_list_screen.dart';
@@ -23,6 +25,37 @@ class _MainNavigationState extends State<MainNavigation> {
     ReportsScreen(),
     SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // Check due subscriptions after the first frame to ensure providers are ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkDueSubscriptions();
+    });
+  }
+
+  void _checkDueSubscriptions() {
+    final subscriptionProvider = context.read<SubscriptionProvider>();
+    final dueSubscriptions = subscriptionProvider.checkDueSubscriptions(DateTime.now());
+    if (dueSubscriptions.isNotEmpty && mounted) {
+      final names = dueSubscriptions.map((s) => s.name).join('、');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('即将到期的订阅: $names'),
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: '查看',
+            onPressed: () {
+              setState(() {
+                _currentIndex = 2; // Switch to subscription tab
+              });
+            },
+          ),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

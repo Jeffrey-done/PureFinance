@@ -327,6 +327,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       date: _selectedDate,
       categoryId: _selectedCategoryId!,
       accountId: _selectedAccountId!,
+      toAccountId: _type == TransactionType.transfer ? _selectedToAccountId : null,
       notes: _notesController.text.isEmpty ? null : _notesController.text,
       tags: _selectedTags.isEmpty ? null : _selectedTags,
       isRecurring: false,
@@ -344,8 +345,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       } else if (oldTxn.type == TransactionType.transfer) {
         // Reverse old transfer: credit source, debit destination
         await accountProvider.updateBalance(oldTxn.accountId, oldTxn.amount);
-        // Note: original transfer destination is stored in categoryId for transfers
-        // but we only have accountId stored on the transaction; reverse what we can
+        if (oldTxn.toAccountId != null) {
+          await accountProvider.updateBalance(oldTxn.toAccountId!, -oldTxn.amount);
+        }
       }
 
       // Apply the new transaction's balance effect

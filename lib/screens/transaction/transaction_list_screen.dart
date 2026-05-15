@@ -35,6 +35,28 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
       ),
       body: Consumer<TransactionProvider>(
         builder: (context, provider, _) {
+          if (provider.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (provider.error != null) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text(provider.error!),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () => provider.loadTransactions(),
+                    child: const Text('重试'),
+                  ),
+                ],
+              ),
+            );
+          }
+
           var transactions = provider.transactions;
 
           // Apply filters
@@ -96,7 +118,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
       child: Text(
         '$formatted $weekday',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -151,6 +173,12 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
           accountProvider.updateBalance(txn.accountId, txn.amount);
         } else if (txn.type == TransactionType.income) {
           accountProvider.updateBalance(txn.accountId, -txn.amount);
+        } else if (txn.type == TransactionType.transfer) {
+          // Reverse transfer: credit source, debit destination
+          accountProvider.updateBalance(txn.accountId, txn.amount);
+          if (txn.toAccountId != null) {
+            accountProvider.updateBalance(txn.toAccountId!, -txn.amount);
+          }
         }
         context.read<TransactionProvider>().deleteTransaction(txn.id);
       },

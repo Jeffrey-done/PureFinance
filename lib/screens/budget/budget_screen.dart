@@ -72,7 +72,7 @@ class BudgetScreen extends StatelessWidget {
                   CircularProgressIndicator(
                     value: clampedProgress,
                     strokeWidth: 10,
-                    backgroundColor: color.withOpacity(0.2),
+                    backgroundColor: color.withValues(alpha: 0.2),
                     color: color,
                   ),
                   Column(
@@ -203,7 +203,7 @@ class BudgetScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(4),
                       child: LinearProgressIndicator(
                         value: clampedProgress,
-                        backgroundColor: color.withOpacity(0.2),
+                        backgroundColor: color.withValues(alpha: 0.2),
                         color: color,
                         minHeight: 6,
                       ),

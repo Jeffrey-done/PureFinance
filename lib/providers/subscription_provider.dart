@@ -6,41 +6,79 @@ import '../services/database_service.dart';
 class SubscriptionProvider extends ChangeNotifier {
   final DatabaseService _dbService = DatabaseService();
   List<RecurringTransaction> _subscriptions = [];
+  bool _isLoading = false;
+  String? _error;
 
   List<RecurringTransaction> get subscriptions => _subscriptions;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
   Future<void> loadSubscriptions() async {
-    final data = await _dbService.query('recurring_transactions');
-    _subscriptions = data
-        .map((map) => RecurringTransaction.fromJson(Map<String, dynamic>.from(map)))
-        .toList();
+    _isLoading = true;
+    _error = null;
     notifyListeners();
-  }
-
-  Future<void> addSubscription(RecurringTransaction subscription) async {
-    await _dbService.insert('recurring_transactions', subscription.toJson());
-    _subscriptions.add(subscription);
-    notifyListeners();
-  }
-
-  Future<void> updateSubscription(RecurringTransaction subscription) async {
-    await _dbService.update(
-      'recurring_transactions',
-      subscription.toJson(),
-      where: 'id = ?',
-      whereArgs: [subscription.id],
-    );
-    final index = _subscriptions.indexWhere((s) => s.id == subscription.id);
-    if (index != -1) {
-      _subscriptions[index] = subscription;
+    try {
+      final data = await _dbService.query('recurring_transactions');
+      _subscriptions = data
+          .map((map) => RecurringTransaction.fromJson(Map<String, dynamic>.from(map)))
+          .toList();
+    } catch (e) {
+      debugPrint('SubscriptionProvider.loadSubscriptions failed: $e');
+      _error = '加载订阅失败: $e';
+    } finally {
+      _isLoading = false;
       notifyListeners();
     }
   }
 
-  Future<void> deleteSubscription(String id) async {
-    await _dbService.delete('recurring_transactions', where: 'id = ?', whereArgs: [id]);
-    _subscriptions.removeWhere((s) => s.id == id);
-    notifyListeners();
+  Future<bool> addSubscription(RecurringTransaction subscription) async {
+    try {
+      await _dbService.insert('recurring_transactions', subscription.toJson());
+      _subscriptions.add(subscription);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('SubscriptionProvider.addSubscription failed: $e');
+      _error = '添加订阅失败: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> updateSubscription(RecurringTransaction subscription) async {
+    try {
+      await _dbService.update(
+        'recurring_transactions',
+        subscription.toJson(),
+        where: 'id = ?',
+        whereArgs: [subscription.id],
+      );
+      final index = _subscriptions.indexWhere((s) => s.id == subscription.id);
+      if (index != -1) {
+        _subscriptions[index] = subscription;
+        notifyListeners();
+      }
+      return true;
+    } catch (e) {
+      debugPrint('SubscriptionProvider.updateSubscription failed: $e');
+      _error = '更新订阅失败: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> deleteSubscription(String id) async {
+    try {
+      await _dbService.delete('recurring_transactions', where: 'id = ?', whereArgs: [id]);
+      _subscriptions.removeWhere((s) => s.id == id);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('SubscriptionProvider.deleteSubscription failed: $e');
+      _error = '删除订阅失败: $e';
+      notifyListeners();
+      return false;
+    }
   }
 
   List<RecurringTransaction> getActiveSubscriptions() {

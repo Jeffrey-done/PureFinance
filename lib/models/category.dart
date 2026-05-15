@@ -21,12 +21,15 @@ class Category {
   });
 
   factory Category.fromJson(Map<String, dynamic> json) {
+    final typeStr = json['type'] as String;
+    final type = CategoryType.values.firstWhere(
+      (e) => e.name == typeStr || e.toString() == typeStr,
+    );
+
     return Category(
       id: json['id'] as String,
       name: json['name'] as String,
-      type: CategoryType.values.firstWhere(
-        (e) => e.toString() == json['type'],
-      ),
+      type: type,
       parentId: json['parentId'] as String?,
       icon: json['icon'] as String?,
       color: json['color'] as String?,
@@ -37,7 +40,7 @@ class Category {
     return {
       'id': id,
       'name': name,
-      'type': type.toString(),
+      'type': type.name,
       'parentId': parentId,
       'icon': icon,
       'color': color,

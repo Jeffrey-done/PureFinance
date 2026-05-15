@@ -23,12 +23,15 @@ class Account {
   });
 
   factory Account.fromJson(Map<String, dynamic> json) {
+    final typeStr = json['type'] as String;
+    final type = AccountType.values.firstWhere(
+      (e) => e.name == typeStr || e.toString() == typeStr,
+    );
+
     return Account(
       id: json['id'] as String,
       name: json['name'] as String,
-      type: AccountType.values.firstWhere(
-        (e) => e.toString() == json['type'],
-      ),
+      type: type,
       balance: (json['balance'] as num).toDouble(),
       currency: json['currency'] as String,
       icon: json['icon'] as String?,
@@ -40,7 +43,7 @@ class Account {
     return {
       'id': id,
       'name': name,
-      'type': type.toString(),
+      'type': type.name,
       'balance': balance,
       'currency': currency,
       'icon': icon,
