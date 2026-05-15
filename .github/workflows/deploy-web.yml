@@ -37,7 +37,17 @@ jobs:
         run: dart run sqflite_common_ffi_web:setup --force
 
       - name: Build web
-        run: flutter build web --release --base-href /PureFinance/ --no-tree-shake-icons
+        run: flutter build web --release --base-href /PureFinance/ --no-tree-shake-icons --dart-define=FLUTTER_WEB_CANVASKIT_URL=./canvaskit/
+
+      - name: Patch wasm loading for GitHub Pages MIME type issue
+        run: |
+          cd build/web
+          # GitHub Pages serves .wasm as application/octet-stream instead of
+          # application/wasm. The sqflite worker uses WebAssembly.instantiateStreaming
+          # which requires correct MIME. Patch sqflite_sw.js to use a fallback fetch.
+          if [ -f sqflite_sw.js ]; then
+            sed -i 's/WebAssembly.instantiateStreaming(fetch(\([^)]*\))/fetch(\1).then(r=>r.arrayBuffer()).then(b=>WebAssembly.instantiate(b)/g' sqflite_sw.js || true
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
