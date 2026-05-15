@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -17,8 +17,16 @@ class DatabaseService {
   }
 
   Future<Database> _initDatabase() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, 'pure_finance.db');
+    // On the web, getDatabasesPath() returns null because there's no real
+    // filesystem. sqflite_common_ffi_web uses IndexedDB under the hood and
+    // only needs a logical database name (no directory path).
+    final String path;
+    if (kIsWeb) {
+      path = 'pure_finance.db';
+    } else {
+      final dbPath = await getDatabasesPath();
+      path = join(dbPath, 'pure_finance.db');
+    }
 
     return await openDatabase(
       path,
