@@ -17,10 +17,9 @@ void main() async {
 
   try {
     if (kIsWeb) {
-      // Use the IndexedDB-backed factory on web. This requires the
-      // sqflite worker assets (sqflite_sw.js + sqlite3.wasm) to be
-      // present under web/. Run `dart run sqflite_common_ffi_web:setup`
-      // before `flutter build web` to install them.
+      // Initialize sqflite for web. Uses IndexedDB under the hood.
+      // The 'NoWebWorker' variant runs sqlite3 in the main thread,
+      // avoiding path resolution issues when deployed under a sub-path.
       databaseFactory = databaseFactoryFfiWebNoWebWorker;
     }
     await DatabaseService().database;
