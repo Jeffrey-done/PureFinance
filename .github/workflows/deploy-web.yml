@@ -33,7 +33,7 @@ jobs:
         run: dart run sqflite_common_ffi_web:setup
 
       - name: Build web
-        run: flutter build web --release --base-href /PureFinance/
+        run: flutter build web --release --base-href /PureFinance/ --no-tree-shake-icons
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
