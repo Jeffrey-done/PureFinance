@@ -37,14 +37,11 @@
   <script>
     // GitHub Pages serves .wasm files as application/octet-stream instead of
     // application/wasm. WebAssembly.instantiateStreaming requires correct MIME.
-    // This shim patches it to fall back to ArrayBuffer loading.
-    const _origInstantiateStreaming = WebAssembly.instantiateStreaming;
-    WebAssembly.instantiateStreaming = (resp, importObject) => {
-      return _origInstantiateStreaming(resp, importObject).catch(() => {
-        return resp.then(r => r.arrayBuffer()).then(bytes =>
-          WebAssembly.instantiate(bytes, importObject)
-        );
-      });
+    // Override it entirely to always use the ArrayBuffer fallback approach.
+    WebAssembly.instantiateStreaming = (response, importObject) => {
+      return Promise.resolve(response)
+        .then(r => r.arrayBuffer())
+        .then(bytes => WebAssembly.instantiate(bytes, importObject));
     };
   </script>
   <script src="flutter_bootstrap.js" async></script>
