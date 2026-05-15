@@ -21,7 +21,7 @@ void main() async {
       // sqflite worker assets (sqflite_sw.js + sqlite3.wasm) to be
       // present under web/. Run `dart run sqflite_common_ffi_web:setup`
       // before `flutter build web` to install them.
-      databaseFactory = databaseFactoryFfiWeb;
+      databaseFactory = databaseFactoryFfiWebNoWebWorker;
     }
     await DatabaseService().database;
   } catch (e, st) {
